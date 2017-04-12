@@ -1,0 +1,132 @@
+#!/bin/ksh
+
+game()
+{
+  echo "##### Let's Play #####"
+  #TOTAL NUMBER OF FRAMES IN THE GAME
+  FRAME_NO=0;
+
+  #ARRAY TO STORE HISTORY OF ALL FRAMES
+    #STORES ALL ROLL1 SCORES PER GAME
+    typeset -A ROLL1_SCORES
+    #SORES ALL ROLL2 SOCRES PER GAME
+    typeset -A ROLL2_SCORES
+    #STOERS ROLL1 + ROLL2 = FRAME
+    typeset -A FRAME_TOTAL
+    #KEEP TRACK OF UPTODATE GAME SCORE
+    typeset -A ENDOF_FRAME_SCORE
+
+    #FLAGS SET ACCORDING TO GAME VARIATIONS
+
+  while [[ FRAME_NO -lt 10 ]]; do
+    echo "-----------------------FRAME $(($FRAME_NO+1))---------------------------------------"
+    ROLL1=""
+    ROLL2=""
+    while [[ "$ROLL1" -eq "" ]]; do
+      read ROLL1?"Roll 1 Score:"
+      ROLL1=`echo "$ROLL1" | grep "^[0-9][0]\?$`
+
+      #CHECK INPUT FOR ROLL1 (ENTERED NUMBER IS VALID OR NOT)
+      if [[ "$ROLL1" -eq "" ]]; then
+        echo "!!Invalid input!! please try again..."
+        sleep 1
+      else
+        let REMAINING_PINS=$((10-$ROLL1))
+        echo "There are $REMAINING_PINS pins left..."
+      fi
+      #PUSH ROLL1
+      ROLL1_SCORES[$FRAME_NO]=$ROLL1
+    done
+
+    while [[ "$ROLL2" -eq "" ]]; do
+      read ROLL2?"Roll 2 Score:"
+      if [[ "$ROLL1" -eq 0 ]]; then
+        ROLL2=`echo "$ROLL2" | grep "^[0-$REMAINING_PINS][0]\?$"`
+      else
+        ROLL2=`echo "$ROLL2" | grep "^[0-$REMAINING_PINS]$"`
+      fi
+
+      #CHECK INPUT FOR ROLL2 (ENTERED NUMBER IS VALID OR NOT)
+      if [[ "$ROLL2" -eq "" ]]; then
+        echo "!!Invalid input!! please try again..."
+        sleep 1
+      fi
+      #PUSH ROLL2
+      ROLL2_SCORES[$FRAME_NO]=$ROLL2
+    done
+
+    #CALCULATE THE FRAME SCORE
+    if [[ "$ROLL1" -ne "" && "$ROLL2" -ne "" ]]; then
+      FRAME_TOTAL[$FRAME_NO]=$(($ROLL1+$ROLL2))
+    fi
+
+    #COUNT THE NORMAL WAY (LASTFRAMESCORE + CURRENT FRAME SCORE)
+    if [[ "$FRAME_NO" -eq 0 ]]; then
+    ENDOF_FRAME_SCORE[$FRAME_NO]=$(( 0 + ${FRAME_TOTAL[$FRAME_NO]}))
+    fi
+    ENDOF_FRAME_SCORE[$FRAME_NO]=$((${ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]} + ${FRAME_TOTAL[$FRAME_NO]}))
+
+    #RESULT AT THE END OF EACH FRAMES
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+      echo "| ${ROLL1_SCORES[0]} # ${ROLL2_SCORES[0]} || ${ROLL1_SCORES[1]} # ${ROLL2_SCORES[1]}  || ${ROLL1_SCORES[2]} # ${ROLL2_SCORES[2]} || ${ROLL1_SCORES[3]} # ${ROLL2_SCORES[3]} || ${ROLL1_SCORES[4]}  # ${ROLL2_SCORES[4]} || ${ROLL1_SCORES[5]} # ${ROLL2_SCORES[5]} || ${ROLL1_SCORES[6]}  # ${ROLL2_SCORES[6]} || ${ROLL1_SCORES[7]} # ${ROLL2_SCORES[7]} || ${ROLL1_SCORES[8]} # ${ROLL2_SCORES[8]} || ${ROLL1_SCORES[9]} # ${ROLL2_SCORES[9]} ||"
+      echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SCORE TOTAL~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+      echo "|(1) ${ENDOF_FRAME_SCORE[0]}  ||(2) ${ENDOF_FRAME_SCORE[1]}  ||(3) ${ENDOF_FRAME_SCORE[2]}  ||(4) ${ENDOF_FRAME_SCORE[3]} ||(5) ${ENDOF_FRAME_SCORE[4]} ||(6) ${ENDOF_FRAME_SCORE[5]}  ||(7) ${ENDOF_FRAME_SCORE[6]} ||(8) ${ENDOF_FRAME_SCORE[7]} ||(9) ${ENDOF_FRAME_SCORE[8]}     ||(10) ${ENDOF_FRAME_SCORE[9]} |"
+      echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
+    #INCREMENT THE FRAME NO
+    FRAME_NO=$((FRAME_NO+1))
+
+  done
+
+
+}
+
+clear
+echo "🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 "
+ banner Bowling
+echo "🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳 🎳🎳 🎳 🎳 🎳 "
+
+select CHOICE in "Begin a game" "Top Statstics" "Exit"
+  do
+    case $CHOICE in
+      "Begin a game")
+        clear
+        verify_Name=''
+          while [[ "$verify_Name" == "" ]]; do
+            clear
+            trap 'print "Sorry! you cannot leave the game"' INT TERM
+            echo "Please Enter Your Name:"
+            read NAME
+            NOW=$(date +'%m/%d/%Y %r')
+            verify_Name=`echo "$NAME" | grep "^[A-Za-z][A-Za-z ]*$"`
+            if [[ "$verify_Name" == "" ]]; then
+              echo "!!Invalid input!! please try again..."
+              sleep 0.5
+            else
+              touch bowling.txt
+              PLAYERCHECK=`grep -i "^$NAME" bowling.txt`
+
+              if [[ $PLAYERCHECK != "" ]]; then
+                clear
+                echo "Welcome back $NAME!"
+                game
+                echo "$NAME $NOW" >> bowling.txt
+              else
+                clear
+                echo "Welcome $NAME! Looks like you are here for the first time."
+                game
+                echo "$NAME $NOW" >> bowling.txt
+              fi
+            fi
+          done
+
+      break;;
+      "Top Statstics")
+      echo "show top score"
+      break;;
+      Exit)
+      echo "quit"
+      break;;
+      *) echo "!!Please enter a valid choice!!"
+    esac
+  done

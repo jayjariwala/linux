@@ -15,23 +15,12 @@ select CHOICE in "Begin a game" "Top Statstics" "Exit"
             trap 'print "Sorry! you cannot leave the game"' INT TERM
             echo "Please Enter Your Name:"
             read NAME
-            NOW=$(date +'%m/%d/%Y %r')
             verify_Name=`echo "$NAME" | grep "^[A-Za-z][A-Za-z ]*$"`
             if [[ "$verify_Name" == "" ]]; then
               echo "!!Invalid input!! please try again..."
               sleep 0.5
-            else
-              touch bowling.txt
-              PLAYERCHECK=`grep -i "^$NAME" bowling.txt`
-
-              if [[ $PLAYERCHECK != "" ]]; then
-                echo "Welcome back $NAME"
-                echo "$NAME $NOW" >> bowling.txt
-              else
-                echo $PLAYERCHECK
-                echo "$NAME $NOW" >> bowling.txt
-              fi
             fi
+            echo "your name: $verify_Name"
           done
 
       break;;

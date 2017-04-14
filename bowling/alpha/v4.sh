@@ -17,11 +17,14 @@ game()
     typeset -A ENDOF_FRAME_SCORE
 
     #FLAGS SET ACCORDING TO GAME VARIATIONS
-
+    let SPARE=0
+    let SPECIAL_CASE=0
+    STRIKE=""
   while [[ FRAME_NO -lt 10 ]]; do
     echo "-----------------------FRAME $(($FRAME_NO+1))---------------------------------------"
     ROLL1=""
     ROLL2=""
+    ROLL3=""
     while [[ "$ROLL1" -eq "" ]]; do
       read ROLL1?"Roll 1 Score:"
       ROLL1=`echo "$ROLL1" | grep "^[0-9][0]\?$`
@@ -38,33 +41,111 @@ game()
       ROLL1_SCORES[$FRAME_NO]=$ROLL1
     done
 
-    while [[ "$ROLL2" -eq "" ]]; do
-      read ROLL2?"Roll 2 Score:"
-      if [[ "$ROLL1" -eq 0 ]]; then
-        ROLL2=`echo "$ROLL2" | grep "^[0-$REMAINING_PINS][0]\?$"`
+#CALCULTE HOW MANY TIMES STRIKE OCCURED
+    if [[ "$ROLL1" -eq  10 ]]; then
+      if [[ "$FRAME_NO" -eq 0 ]]; then
+        STRIKE="FIRST_TIME"
+        echo "FIRST_TIME"
+      elif [[ "$FRAME_NO" -eq 1 ]]; then
+        if [[ "${ROLL1_SCORES[$(($FRAME_NO-1))]}" -eq 10 ]]; then
+          STRIKE="SECOND_TIME"
+          echo "SECOND_TIME"
+        else
+          STRIKE="FIRST_TIME"
+          echo "FIRST_TIME"
+        fi
       else
-        ROLL2=`echo "$ROLL2" | grep "^[0-$REMAINING_PINS]$"`
+        if [[ "${ROLL1_SCORES[$(($FRAME_NO-2))]}" -eq 10 && "${ROLL1_SCORES[$(($FRAME_NO-1))]}" -eq 10 ]]; then
+          STRIKE="THIRD_TIME"
+          echo "THIRD_TIME"
+        elif [["${ROLL1_SCORES[$(($FRAME_NO-2))]}" -ne 10 && "${ROLL1_SCORES[$(($FRAME_NO-1))]}" -eq 10]]; then
+          STRIKE="SECOND_TIME"
+          echo "SECOND_TIME"
+        elif [["${ROLL1_SCORES[$(($FRAME_NO-2))]}" -ne 10 && "${ROLL1_SCORES[$(($FRAME_NO-1))]}" -ne 10]]; then
+          STRIKE="FIRST_TIME"
+          echo "FIRST_TIME"
+        fi
       fi
-
-      #CHECK INPUT FOR ROLL2 (ENTERED NUMBER IS VALID OR NOT)
-      if [[ "$ROLL2" -eq "" ]]; then
-        echo "!!Invalid input!! please try again..."
-        sleep 1
-      fi
-      #PUSH ROLL2
-      ROLL2_SCORES[$FRAME_NO]=$ROLL2
-    done
-
-    #CALCULATE THE FRAME SCORE
-    if [[ "$ROLL1" -ne "" && "$ROLL2" -ne "" ]]; then
-      FRAME_TOTAL[$FRAME_NO]=$(($ROLL1+$ROLL2))
     fi
 
-    #COUNT THE NORMAL WAY (LASTFRAMESCORE + CURRENT FRAME SCORE)
-    if [[ "$FRAME_NO" -eq 0 ]]; then
-    ENDOF_FRAME_SCORE[$FRAME_NO]=$(( 0 + ${FRAME_TOTAL[$FRAME_NO]}))
+    if [[ "$STRIKE" == "" ]]; then
+      echo "<><<>><><> $STRIKE"
+      while [[ "$ROLL2" -eq "" ]]; do
+        read ROLL2?"Roll 2 Score:"
+        if [[ "$ROLL1" -eq 0 ]]; then
+          ROLL2=`echo "$ROLL2" | grep "^[0-$REMAINING_PINS][0]\?$"`
+        else
+          ROLL2=`echo "$ROLL2" | grep "^[0-$REMAINING_PINS]$"`
+        fi
+
+        #CHECK INPUT FOR ROLL2 (ENTERED NUMBER IS VALID OR NOT)
+        if [[ "$ROLL2" -eq "" ]]; then
+          echo "!!Invalid input!! please try again..."
+          sleep 1
+        fi
+        #PUSH ROLL2
+        ROLL2_SCORES[$FRAME_NO]=$ROLL2
+      done
     fi
-    ENDOF_FRAME_SCORE[$FRAME_NO]=$((${ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]} + ${FRAME_TOTAL[$FRAME_NO]}))
+
+
+
+
+    #OVERALL SCORE COUTING FOR PREVIOUS FRAME
+    #IF SPARE OCCURED PREVIOUSLY
+    if [[ "$SPARE" -eq 1 ]]; then
+      if [[ "$FRAME_NO" -eq 1 ]]; then
+        ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]=$(( 10 +  $(($ROLL1))))
+      else
+        ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]=$(( ${ENDOF_FRAME_SCORE[$(($FRAME_NO-2))]} + 10 +  $(($ROLL1))))
+      fi
+        SPARE=0
+    fi
+
+    #FRAME SCORE COUNTING
+    #IF THE STRKE OCCURES (SKIP THE FRAME SCORE)
+    if [[ "$ROLL1" -ne 10 && "$ROLL1" -ne "" && "$ROLL2" -ne "" && "$(($ROLL1+$ROLL2))" -eq 10 ]]; then
+      #CALCULTE SPECIAL CASE FOR 10TH FRAME
+      if [[ "$FRAME_NO" -eq 9 ]]; then
+        #IF STIKE OCCURS
+        if [[ "$ROLL1" -ne 10 && "$(($ROLL1 + $ROLL2))" -eq 10 ]]; then
+          while [[ "$ROLL3" -eq "" ]]; do
+            read ROLL3?"Roll 3 Score:"
+            ROLL1=`echo "$ROLL3" | grep "^[0-9][0]\?$`
+
+            #CHECK INPUT FOR ROLL1 (ENTERED NUMBER IS VALID OR NOT)
+            if [[ "$ROLL3" -eq "" ]]; then
+              echo "!!Invalid input!! please try again..."
+              sleep 1
+            fi
+          done
+
+          SPECIAL_CASE=1
+        fi
+      fi
+
+      FRAME_TOTAL[$FRAME_NO]=10
+      SPARE=1;
+      #CALCULATE THE FRAME SCORE NOMAL WAY
+      elif [[ "$ROLL1" -ne 10 && "$ROLL1" -ne "" && "$ROLL2" -ne "" && "$(($ROLL1+$ROLL2))" -ne 10 ]]; then
+        FRAME_TOTAL[$FRAME_NO]=$(($ROLL1+$ROLL2))
+
+
+    fi
+
+
+    # OVERALL SCORE COUNTING FOR CURRENT FRAME
+    if [[ "$SPECIAL_CASE" -eq 1 ]]; then
+      ENDOF_FRAME_SCORE[$FRAME_NO]=$((${ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]} + $ROLL1 + $ROLL2 + $ROLL3))
+    elif [[ "$SPARE" -eq 1 && "$SPECIAL_CASE" -eq 0 ]]; then
+      ENDOF_FRAME_SCORE[$FRAME_NO]=""
+    else
+      #COUNT THE NORMAL WAY (LASTFRAMESCORE + CURRENT FRAME SCORE)
+      if [[ "$FRAME_NO" -eq 0 ]]; then
+      ENDOF_FRAME_SCORE[$FRAME_NO]=$(( 0 + ${FRAME_TOTAL[$FRAME_NO]}))
+      fi
+      ENDOF_FRAME_SCORE[$FRAME_NO]=$((${ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]} + ${FRAME_TOTAL[$FRAME_NO]}))
+    fi
 
     #RESULT AT THE END OF EACH FRAMES
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"

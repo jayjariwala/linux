@@ -30,7 +30,6 @@ game()
     while [[ "$ROLL1" == "" ]]; do
       read ROLL1?"Roll 1 Score:"
       ROLL1=`echo "$ROLL1" | grep "^[0-9][0]\?$`
-      echo "THE INPUT IS:: $ROLL1"
       #CHECK INPUT FOR ROLL1 (ENTERED NUMBER IS VALID OR NOT)
       if [[ "$ROLL1" == "" ]]; then
         echo "!!Invalid input!! please try again..."
@@ -47,7 +46,6 @@ game()
 
 
     if [[ "$ROLL1" -ne 10 || "$FRAME_NO" -eq 9 ]]; then
-      echo "STRIKE_OCCURENCE TIMES $STRIKE_OCCURENCE"
       while [[ "$ROLL2" == "" ]]; do
         read ROLL2?"Roll 2 Score:"
         if [[ "$FRAME_NO" -eq 9 ]]; then
@@ -55,7 +53,6 @@ game()
         else
           if [[ "$ROLL1" -eq 0 ]]; then
             ROLL2=`echo "$ROLL2" | grep "^[0-$(($REMAINING_PINS-1))][0]\?$"`
-            echo "ROLL2:::: $ROLL2"
           else
             ROLL2=`echo "$ROLL2" | grep "^[0-$REMAINING_PINS]$"`
           fi
@@ -68,7 +65,6 @@ game()
           sleep 1
         fi
         #PUSH ROLL2
-        echo "EXECUTE THISs"
         ROLL2_SCORES[$FRAME_NO]=$ROLL2
       done
     fi
@@ -92,7 +88,6 @@ game()
    if [[ "$FRAME_NO" -eq 9 ]]; then
       #IF STIKE OCCURS
     if [[ "$ROLL1" -eq 10 ]]; then
-      echo "Allow extra roll"
           while [[ "$ROLL3" -eq "" ]]; do
           read ROLL3?"Roll 3 Score:"
           ROLL3=`echo "$ROLL3" | grep "^[0-9][0]\?$`
@@ -139,18 +134,12 @@ game()
         FRAME_TOTAL[$FRAME_NO]=$ROLL1
       #CALCULATE THE FRAME SCORE NOMAL WAY
     elif [[ "$ROLL1" -ne 10 && "$ROLL1" != "" && "$ROLL2" != "" && "$(($ROLL1+$ROLL2))" -ne 10 ]]; then
-        echo "ROLL1 value is: $ROLL1"
-        echo "ROLL2 value is: $ROLL2"
         FRAME_TOTAL[$FRAME_NO]=$(($ROLL1+$ROLL2))
     fi
 
 
     # OVERALL SCORE COUNTING FOR CURRENT FRAME
     if [[ "$SPECIAL_CASE" -eq 1 ]]; then
-      echo "END OF FRAME SCORE::: ${ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]}"
-      echo "ROLL1 ::: $ROLL1"
-      echo "ROLL2 ::: $ROLL2"
-      echo "ROLL3 ::: $ROLL3"
       if [[ "$STRIKE_OCCURENCE" == "FIRST_TIME" ]]; then
       ENDOF_FRAME_SCORE[$(($FRAME_NO -1))]=$((${ENDOF_FRAME_SCORE[$(($FRAME_NO-2))]} + ${ROLL1_SCORES[$(($FRAME_NO-1))]} + $ROLL1 + $ROLL2))
       ENDOF_FRAME_SCORE[$FRAME_NO]=$((${ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]} + $ROLL1 + $ROLL2 + $ROLL3))
@@ -163,10 +152,6 @@ game()
       fi
 
     elif [[ "$SPECIAL_CASE_STRIKE" -eq 1 ]]; then
-      echo "END OF FRAME SCORE::: ${ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]}"
-      echo "ROLL1 ::: $ROLL1"
-      echo "ROLL2 ::: $ROLL2"
-      echo "ROLL3 ::: $ROLL3"
       if [[ "$STRIKE_OCCURENCE" == "FIRST_TIME" ]]; then
       ENDOF_FRAME_SCORE[$(($FRAME_NO -1))]=$((${ENDOF_FRAME_SCORE[$(($FRAME_NO-2))]} + ${ROLL1_SCORES[$(($FRAME_NO-1))]} + $ROLL1 + $ROLL2))
       ENDOF_FRAME_SCORE[$FRAME_NO]=$((${ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]} + $ROLL1 + $ROLL2 + $ROLL3))
@@ -192,7 +177,6 @@ game()
           STRIKE=0
           fi
         elif [[ "$STRIKE_OCCURENCE" == "SECOND_TIME" || "$STRIKE_OCCURENCE" == "THIRD_TIME" ]]; then
-          echo "COMBO !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
           if [[ "$FRAME_NO" -eq 0 ]]; then
           ENDOF_FRAME_SCORE[$(($FRAME_NO-2))]=$((${ROLL1_SCORES[$((FRAME_NO-2))]} + ${ROLL1_SCORES[$((FRAME_NO-1))]} + $ROLL1))
           ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]=$((${ENDOF_FRAME_SCORE[$((FRAME_NO-2))]} + ${ROLL1_SCORES[$((FRAME_NO-1))]} + $ROLL1 + $ROLL2))
@@ -240,7 +224,6 @@ game()
       ENDOF_FRAME_SCORE[$FRAME_NO]=$((${ENDOF_FRAME_SCORE[$(($FRAME_NO-1))]} + ${FRAME_TOTAL[$FRAME_NO]}))
       STRIKE_OCCURENCE=""
       STRIKE=0
-    echo "do something"
     else
       #COUNT THE NORMAL WAY (LASTFRAMESCORE + CURRENT FRAME SCORE)
       if [[ "$FRAME_NO" -eq 0 ]]; then
@@ -254,14 +237,11 @@ game()
             STRIKE=1
           if [[ "$FRAME_NO" -eq 0 ]]; then
             STRIKE_OCCURENCE="FIRST_TIME"
-            echo "FIRST_TIME"
           elif [[ "$FRAME_NO" -eq 1 ]]; then
             if [[ "${ROLL1_SCORES[$(($FRAME_NO-1))]}" -eq 10 ]]; then
               STRIKE_OCCURENCE="SECOND_TIME"
-              echo "SECOND_TIME"
             else
               STRIKE_OCCURENCE="FIRST_TIME"
-              echo "FIRST_TIME"
             fi
           else
             if [[ "${ROLL1_SCORES[$(($FRAME_NO - 2))]}" -eq 10 && "${ROLL1_SCORES[$(( $FRAME_NO - 1))]}" -eq 10 ]]; then
@@ -273,10 +253,8 @@ game()
               STRIKE_OCCURENCE="THIRD_TIME"
             elif [[ "${ROLL1_SCORES[$(($FRAME_NO - 1))]}" -eq 10 && "$ROLL1" -eq 10 && "${ROLL1_SCORES[$(($FRAME_NO - 2))]}" -ne 10 ]]; then
               STRIKE_OCCURENCE="SECOND_TIME"
-              echo "SECOND_TIME"
             elif [[ "${ROLL1_SCORES[$(($FRAME_NO - 1))]}" -ne 10 && "$ROLL1" -eq 10 ]]; then
               STRIKE_OCCURENCE="FIRST_TIME"
-              echo "FIRST_TIME"
             fi
           fi
         fi
